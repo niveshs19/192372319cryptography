@@ -1,23 +1,28 @@
-def vigenere_encrypt(plaintext, key):
-    plaintext = plaintext.lower()
-    key = key.lower()
-    cipher = ""
+plain = "this is a secret"
+key = "key"
 
-    k = 0
-    for ch in plaintext:
-        if ch.isalpha():
-            shift = ord(key[k % len(key)]) - ord('a')
-            new = chr((ord(ch) - ord('a') + shift) % 26 + ord('a'))
-            cipher += new
-            k += 1
-        else:
-            cipher += ch
-    return cipher
+# Repeat key to match plaintext length
+full_key = (key * (len(plain)//len(key) + 1))[:len(plain)]
 
+# Encrypt
+enc = ""
+for p, k in zip(plain, full_key):
+    if p.isalpha():
+        base = ord('a')
+        enc += chr((ord(p) - base + (ord(k) - base)) % 26 + base)
+    else:
+        enc += p
 
-# ---- MAIN ----
-plaintext = input("Enter plaintext: ")
-key = input("Enter key: ")
+# Decrypt
+dec = ""
+for c, k in zip(enc, full_key):
+    if c.isalpha():
+        base = ord('a')
+        dec += chr((ord(c) - base - (ord(k) - base)) % 26 + base)
+    else:
+        dec += c
 
-encrypted = vigenere_encrypt(plaintext, key)
-print("Encrypted:", encrypted)
+print("Plaintext :", plain)
+print("Key       :", key)
+print("Encrypted :", enc)
+print("Decrypted :", dec)
