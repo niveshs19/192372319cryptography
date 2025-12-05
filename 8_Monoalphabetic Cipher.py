@@ -1,16 +1,46 @@
-def keyword_cipher_encrypt(plain, keyword="CIPHER"):
-    keyword = "".join(dict.fromkeys(keyword.lower()))
-    alphabet = "abcdefghijklmnopqrstuvwxyz"
-    remaining = "".join([c for c in alphabet if c not in keyword])
-    cipher = keyword + remaining
+keyword = "CIPHER".lower()
+plain = "abcdefghijklmnopqrstuvwxyz"
 
-    table = {alphabet[i]: cipher[i] for i in range(26)}
+# Build cipher alphabet from keyword
+cipher = ""
+for c in keyword:
+    if c not in cipher:
+        cipher += c
+
+for c in plain:
+    if c not in cipher:
+        cipher += c
+
+print("Plain  :", plain)
+print("Cipher :", cipher)
+
+
+# Encryption
+def encrypt(text):
     result = ""
-    for ch in plain.lower():
-        if ch.isalpha():
-            result += table[ch]
+    for c in text.lower():
+        if c in plain:
+            result += cipher[plain.index(c)]
         else:
-            result += ch
+            result += c
     return result
 
-print("Cipher Text:", keyword_cipher_encrypt("attack at dawn"))
+# Decryption
+def decrypt(text):
+    result = ""
+    for c in text.lower():
+        if c in cipher:
+            result += plain[cipher.index(c)]
+        else:
+            result += c
+    return result
+
+
+# Example
+message = "attack at dawn"
+enc = encrypt(message)
+dec = decrypt(enc)
+
+print("Message     :", message)
+print("Encrypted   :", enc)
+print("Decrypted   :", dec)
