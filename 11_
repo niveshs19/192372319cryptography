@@ -1,0 +1,14 @@
+import math
+
+# Step 1: Total possible keys
+total_keys = math.factorial(25)
+total_keys_bits = math.log2(total_keys)
+
+# Step 2: Effectively unique keys (approximate)
+# Divide by (5! ^5) for row/column symmetries
+row_col_symmetry = math.factorial(5) ** 5
+unique_keys = total_keys / row_col_symmetry
+unique_keys_bits = math.log2(unique_keys)
+
+print(f"Total possible keys (ignoring duplicates): 25! ≈ 2^{total_keys_bits:.1f}")
+print(f"Effectively unique keys (approx): ≈ 2^{unique_keys_bits:.1f}")
