@@ -1,18 +1,20 @@
-def affine_decrypt(cipher, a, b):
-    for x in range(26):
-        if (a*x) % 26 == 1:
-            a_inv = x
-            break
-    plain = ""
-    for ch in cipher.lower():
-        if ch.isalpha():
-            c = ord(ch)-97
-            p = (a_inv*(c-b)) % 26
-            plain += chr(p+97)
-        else:
-            plain += ch
-    return plain
+# Given mappings:
+# E (4) → B (1)
+# T (19) → U (20)
 
-cipher = "puupvt pu fcvb"
-print("Cipher Text:",cipher)
-print("Plaintext =", affine_decrypt(cipher, 3, 15))
+P1, C1 = 4, 1
+P2, C2 = 19, 20
+
+# Solve for a
+diffC = (C2 - C1) % 26
+diffP = (P2 - P1) % 26
+
+for a in range(26):
+    if (a * diffP) % 26 == diffC:
+        break
+
+# Solve for b
+b = (C1 - a * P1) % 26
+
+print("a =", a)
+print("b =", b)
