@@ -1,0 +1,35 @@
+import numpy as np
+
+# Key matrix
+K = np.array([[9,4],[5,7]])
+
+# Plaintext
+pt = "MEETMEATTHEUSUALPLACEATTENRATHERTHANEIGHTOCLOCK".upper()
+if len(pt)%2: pt += 'X'
+
+# Text to numbers
+pt_nums = [ord(c)-65 for c in pt]
+
+# Encrypt
+ct_nums = []
+for i in range(0,len(pt_nums),2):
+    pair = np.array(pt_nums[i:i+2])
+    ct_nums.extend((K.dot(pair)%26))
+cipher = ''.join([chr(n+65) for n in ct_nums])
+print("Ciphertext:", cipher)
+
+# --- Decrypt ---
+det = int(round(np.linalg.det(K)))%26
+def modinv(a,m):
+    for i in range(1,m):
+        if (a*i)%m==1: return i
+inv = modinv(det,26)
+adj = np.array([[K[1,1], -K[0,1]], [-K[1,0], K[0,0]]])%26
+K_inv = (inv*adj)%26
+
+pt_nums2 = []
+for i in range(0,len(ct_nums),2):
+    pair = np.array(ct_nums[i:i+2])
+    pt_nums2.extend((K_inv.dot(pair)%26).astype(int))
+decrypted = ''.join([chr(n+65) for n in pt_nums2])
+print("Decrypted:", decrypted)
