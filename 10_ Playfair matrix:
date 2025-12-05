@@ -1,0 +1,36 @@
+# Playfair matrix
+m = [
+    ['M','F','H','I','K'],
+    ['U','N','O','P','Q'],
+    ['Z','V','W','X','Y'],
+    ['E','L','A','R','G'],
+    ['D','S','T','B','C']
+]
+
+msg = "Must see you over Cadogan West. Coming at once.".upper().replace("J","I")
+msg = ''.join([c for c in msg if c.isalpha()])
+
+# Create digraphs
+pairs, i = [], 0
+while i < len(msg):
+    a = msg[i]
+    b = msg[i+1] if i+1 < len(msg) and msg[i+1] != a else 'X'
+    pairs.append(a+b)
+    i += 2 if b != 'X' else 1
+
+# Find position
+def pos(ch):
+    for r in range(5):
+        for c in range(5):
+            if m[r][c]==ch: return r,c
+
+# Encrypt
+cipher = ""
+for a,b in pairs:
+    r1,c1 = pos(a)
+    r2,c2 = pos(b)
+    if r1==r2: cipher += m[r1][(c1+1)%5] + m[r2][(c2+1)%5]
+    elif c1==c2: cipher += m[(r1+1)%5][c1] + m[(r2+1)%5][c2]
+    else: cipher += m[r1][c2] + m[r2][c1]
+
+print("Ciphertext:", cipher)
