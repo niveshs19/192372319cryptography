@@ -1,91 +1,46 @@
-def generate_matrix(keyword):
-    keyword = keyword.lower().replace("j", "i")
-    matrix = []
-    used = set()
+key = "keyword"
+text = "playfairexample"
 
-    for ch in keyword:
-        if ch not in used and ch.isalpha():
-            used.add(ch)
-            matrix.append(ch)
+# Remove j and duplicates, build 5x5 matrix
+key = key.replace("j", "i")
+matrix = []
+for c in key + "abcdefghijklmnopqrstuvwxyz":
+    if c not in matrix and c != "j":
+        matrix.append(c)
+matrix = [matrix[i*5:(i+1)*5] for i in range(5)]
 
-    for ch in "abcdefghiklmnopqrstuvwxyz":  # j removed
-        if ch not in used:
-            used.add(ch)
-            matrix.append(ch)
-
-    return [matrix[i:i+5] for i in range(0, 25, 5)]
-
-
-def find_position(matrix, ch):
+def pos(ch):
     for i in range(5):
         for j in range(5):
             if matrix[i][j] == ch:
                 return i, j
-    return None
 
+# Prepare pairs
+pairs = []
+i = 0
+while i < len(text):
+    a = text[i]
+    b = text[i+1] if i+1 < len(text) else "x"
+    if a == b:
+        pairs.append(a + "x")
+        i += 1
+    else:
+        pairs.append(a + b)
+        i += 2
 
-def playfair_encrypt(plaintext, keyword):
-    matrix = generate_matrix(keyword)
-    plaintext = plaintext.lower().replace("j", "i")
-    new_text = ""
+# Encrypt
+cipher = ""
+for p in pairs:
+    r1, c1 = pos(p[0])
+    r2, c2 = pos(p[1])
 
-    # Prepare digraphs
-    i = 0
-    while i < len(plaintext):
-        a = plaintext[i]
-        b = plaintext[i+1] if i+1 < len(plaintext) else 'x'
-        if a == b:
-            b = 'x'
-            i += 1
-        else:
-            i += 2
-        new_text += a + b
+    if r1 == r2:  # same row
+        cipher += matrix[r1][(c1+1)%5] + matrix[r2][(c2+1)%5]
+    elif c1 == c2:  # same column
+        cipher += matrix[(r1+1)%5][c1] + matrix[(r2+1)%5][c2]
+    else:  # rectangle
+        cipher += matrix[r1][c2] + matrix[r2][c1]
 
-    cipher = ""
-    for i in range(0, len(new_text), 2):
-        a, b = new_text[i], new_text[i+1]
-        r1, c1 = find_position(matrix, a)
-        r2, c2 = find_position(matrix, b)
-
-        if r1 == r2:  # same row
-            cipher += matrix[r1][(c1 + 1) % 5]
-            cipher += matrix[r2][(c2 + 1) % 5]
-        elif c1 == c2:  # same column
-            cipher += matrix[(r1 + 1) % 5][c1]
-            cipher += matrix[(r2 + 1) % 5][c2]
-        else:  # rectangle
-            cipher += matrix[r1][c2]
-            cipher += matrix[r2][c1]
-
-    return cipher
-
-
-# ---- MAIN ----
-plaintext = input("Enter plaintext: ")
-keyword = input("Enter keyword: ")
-
-cipher = playfair_encrypt(plaintext, keyword)
-print("Encrypted:", cipher)
-def vigenere_encrypt(plaintext, key):
-    plaintext = plaintext.lower()
-    key = key.lower()
-    cipher = ""
-
-    k = 0
-    for ch in plaintext:
-        if ch.isalpha():
-            shift = ord(key[k % len(key)]) - ord('a')
-            new = chr((ord(ch) - ord('a') + shift) % 26 + ord('a'))
-            cipher += new
-            k += 1
-        else:
-            cipher += ch
-    return cipher
-
-
-# ---- MAIN ----
-plaintext = input("Enter plaintext: ")
-key = input("Enter key: ")
-
-encrypted = vigenere_encrypt(plaintext, key)
-print("Encrypted:", encrypted)
+print("Key       :", key)
+print("Plaintext :", text)
+print("Ciphertext:", cipher)
