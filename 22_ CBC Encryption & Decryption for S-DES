@@ -1,0 +1,127 @@
+# ---------------------------
+#  S-DES Helper Functions
+# ---------------------------
+
+def permute(bits, table):
+    return ''.join(bits[i-1] for i in table)
+
+def left_shift(bits, n):
+    return bits[n:] + bits[:n]
+
+# P10, P8, IP, IP^-1, EP, P4, S-boxes
+P10 = [3,5,2,7,4,10,1,9,8,6]
+P8  = [6,3,7,4,8,5,10,9]
+IP  = [2,6,3,1,4,8,5,7]
+IP_INV = [4,1,3,5,7,2,8,6]
+EP  = [4,1,2,3,2,3,4,1]
+P4  = [2,4,3,1]
+
+S0 = [
+    [1,0,3,2],
+    [3,2,1,0],
+    [0,2,1,3],
+    [3,1,3,2]
+]
+
+S1 = [
+    [0,1,2,3],
+    [2,0,1,3],
+    [3,0,1,0],
+    [2,1,0,3]
+]
+
+
+# ---------------------------
+#  KEY GENERATION
+# ---------------------------
+def generate_keys(key10):
+    key_p10 = permute(key10, P10)
+    left, right = key_p10[:5], key_p10[5:]
+
+    left1 = left_shift(left, 1)
+    right1 = left_shift(right, 1)
+    K1 = permute(left1 + right1, P8)
+
+    left2 = left_shift(left1, 2)
+    right2 = left_shift(right1, 2)
+    K2 = permute(left2 + right2, P8)
+
+    return K1, K2
+
+
+# ---------------------------
+#  F(K, R) function
+# ---------------------------
+def fk(bits, key):
+    L, R = bits[:4], bits[4:]
+    R_expanded = permute(R, EP)
+
+    xor_out = ''.join('1' if a != b else '0' for a, b in zip(R_expanded, key))
+
+    row = int(xor_out[0] + xor_out[3], 2)
+    col = int(xor_out[1] + xor_out[2], 2)
+    s0_out = format(S0[row][col], '02b')
+
+    row = int(xor_out[4] + xor_out[7], 2)
+    col = int(xor_out[5] + xor_out[6], 2)
+    s1_out = format(S1[row][col], '02b')
+
+    p4_out = permute(s0_out + s1_out, P4)
+
+    L_out = ''.join('1' if a != b else '0' for a, b in zip(L, p4_out))
+
+    return L_out + R
+
+
+# ---------------------------
+#  S-DES Encrypt / Decrypt
+# ---------------------------
+def sdes_encrypt(bits8, K1, K2):
+    tmp = permute(bits8, IP)
+    t1 = fk(tmp, K1)
+    t2 = fk(t1[4:] + t1[:4], K2)
+    return permute(t2, IP_INV)
+
+def sdes_decrypt(bits8, K1, K2):
+    tmp = permute(bits8, IP)
+    t1 = fk(tmp, K2)
+    t2 = fk(t1[4:] + t1[:4], K1)
+    return permute(t2, IP_INV)
+
+# ---------------------------
+# CBC MODE USING S-DES
+# ---------------------------
+def xor_bits(a, b):
+    return ''.join('1' if x != y else '0' for x, y in zip(a, b))
+
+def cbc_encrypt_sdes(plaintext16, key10, IV):
+    K1, K2 = generate_keys(key10)
+    P1, P2 = plaintext16[:8], plaintext16[8:]
+
+    C1 = sdes_encrypt(xor_bits(P1, IV), K1, K2)
+    C2 = sdes_encrypt(xor_bits(P2, C1), K1, K2)
+
+    return C1 + C2
+
+def cbc_decrypt_sdes(cipher16, key10, IV):
+    K1, K2 = generate_keys(key10)
+    C1, C2 = cipher16[:8], cipher16[8:]
+
+    P1 = xor_bits(sdes_decrypt(C1, K1, K2), IV)
+    P2 = xor_bits(sdes_decrypt(C2, K1, K2), C1)
+
+    return P1 + P2
+
+
+# ---------------------------
+# TEST CASE
+# ---------------------------
+IV = "10101010"
+plaintext = "0000000100100011"
+key10 =     "0111111101"
+
+cipher = cbc_encrypt_sdes(plaintext, key10, IV)
+print("Ciphertext:", cipher)
+
+plain2 = cbc_decrypt_sdes(cipher, key10, IV)
+print("Decrypted :", plain2)
