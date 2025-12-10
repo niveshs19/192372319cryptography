@@ -1,0 +1,24 @@
+from Crypto.Cipher import DES3
+from Crypto.Util.Padding import pad, unpad
+import base64
+
+# 3DES requires 24-byte key
+key = b"123456789012345678901234"     # 24 bytes = 192-bit key
+iv  = b"ABCDEFGH"                     # 8 bytes IV
+
+plaintext = b"THIS IS A CBC MODE TEST MESSAGE"
+
+# Create CBC cipher object
+cipher = DES3.new(key, DES3.MODE_CBC, iv)
+
+# Encrypt using CBC
+ciphertext = cipher.encrypt(pad(plaintext, DES3.block_size))
+
+print("Plaintext     :", plaintext)
+print("Ciphertext(B64):", base64.b64encode(ciphertext).decode())
+
+# Decryption (to verify correctness)
+cipher_dec = DES3.new(key, DES3.MODE_CBC, iv)
+pt = unpad(cipher_dec.decrypt(ciphertext), DES3.block_size)
+
+print("Decrypted     :", pt)
