@@ -1,0 +1,44 @@
+from Crypto.Cipher import DES3
+from Crypto.Util.Padding import pad, unpad
+import copy
+import base64
+
+key = b"123456789012345678901234"
+iv  = b"ABCDEFGH"
+
+plaintext = b"THIS IS BLOCK ONE....THIS IS BLOCK TWO...."
+
+# ---------------------------------
+# ECB MODE
+# ---------------------------------
+cipher_ecb = DES3.new(key, DES3.MODE_ECB)
+ciphertext_ecb = cipher_ecb.encrypt(pad(plaintext, DES3.block_size))
+
+# Introduce 1-bit error in first block of ECB
+corrupted_ecb = bytearray(ciphertext_ecb)
+corrupted_ecb[0] ^= 0x01
+
+# Decrypt ECB
+cipher_ecb_d = DES3.new(key, DES3.MODE_ECB)
+decrypted_ecb = cipher_ecb_d.decrypt(bytes(corrupted_ecb))
+
+print("\n---- ECB MODE ----")
+print("Original:", plaintext)
+print("Decrypted (with error):", decrypted_ecb)
+
+
+# ---------------------------------
+# CBC MODE
+# ---------------------------------
+cipher_cbc = DES3.new(key, DES3.MODE_CBC, iv)
+ciphertext_cbc = cipher_cbc.encrypt(pad(plaintext, DES3.block_size))
+
+# Introduce 1-bit error in C1
+corrupted_cbc = bytearray(ciphertext_cbc)
+corrupted_cbc[0] ^= 0x01
+
+cipher_cbc_d = DES3.new(key, DES3.MODE_CBC, iv)
+decrypted_cbc = cipher_cbc_d.decrypt(bytes(corrupted_cbc))
+
+print("\n---- CBC MODE ----")
+print("Decrypted (with error):", decrypted_cbc)
