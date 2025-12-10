@@ -1,0 +1,18 @@
+from Crypto.Cipher import AES
+
+def cbc_mac(key, msg):
+    cipher = AES.new(key, AES.MODE_CBC, iv=b'\x00'*16)
+    mac = cipher.encrypt(msg)
+    return mac[-16:]  # last block
+
+key = b"thisisakey123456"
+X = b"16 bytes block!"
+T = cbc_mac(key, X)
+
+# Construct two-block message
+Y = bytes([x ^ t for x, t in zip(X, T)])
+msg2 = X + Y
+T2 = cbc_mac(key, msg2)
+
+print("Single block MAC:", T.hex())
+print("Two-block MAC (X||X⊕T):", T2.hex())
