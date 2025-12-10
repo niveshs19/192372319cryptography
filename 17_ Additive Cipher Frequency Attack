@@ -1,0 +1,60 @@
+# Additive Cipher (Caesar Cipher) - Letter Frequency Attack
+# Automatically ranks plaintexts based on English frequency score
+
+import string
+
+# English letter frequency (approx.)
+english_freq = {
+    'E': 12.7, 'T': 9.1, 'A': 8.2, 'O': 7.5, 'I': 7.0, 'N': 6.7, 'S': 6.3,
+    'H': 6.1, 'R': 6.0, 'D': 4.3, 'L': 4.0, 'C': 2.8, 'U': 2.8, 'M': 2.4,
+    'W': 2.4, 'F': 2.2, 'G': 2.0, 'Y': 2.0, 'P': 1.9, 'B': 1.5, 'V': 1.0,
+    'K': 0.8, 'X': 0.15, 'J': 0.1, 'Q': 0.1, 'Z': 0.05
+}
+
+def score_text(text):
+    """Scores text based on English frequency similarity."""
+    score = 0
+    text = text.upper()
+    for char in text:
+        if char in english_freq:
+            score += english_freq[char]
+    return score
+
+def decrypt(cipher, key):
+    """Decrypt using Caesar shift (additive cipher)."""
+    result = ""
+    for c in cipher:
+        if c.isalpha():
+            shift = (ord(c.upper()) - ord('A') - key) % 26
+            result += chr(shift + ord('A'))
+        else:
+            result += c
+    return result
+
+def additive_frequency_attack(ciphertext, top_n=10):
+    candidates = []
+
+    for key in range(26):
+        pt = decrypt(ciphertext, key)
+        score = score_text(pt)
+        candidates.append((score, key, pt))
+
+    # Rank by score (highest = most likely)
+    candidates.sort(reverse=True)
+
+    return candidates[:top_n]
+
+
+# ------------------------------
+# MAIN PROGRAM
+# ------------------------------
+ciphertext = "ZHOFRPH WR FUBSWRJUDSKB"  # sample input (you can change)
+
+top_n = 10
+
+results = additive_frequency_attack(ciphertext, top_n)
+
+print(f"\nTop {top_n} Most Likely Plaintexts:\n")
+
+for rank, (score, key, plaintext) in enumerate(results, start=1):
+    print(f"[{rank}] Key = {key:2d} | Score = {score:6.2f} | {plaintext}")
