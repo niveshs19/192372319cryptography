@@ -1,0 +1,50 @@
+import random
+import string
+
+# Convert char ↔ number (a=0 ... z=25)
+c2n = lambda c: ord(c) - 97
+n2c = lambda n: chr((n % 26) + 97)
+
+
+def generate_key(length):
+    """Generate random key numbers between 0–25."""
+    return [random.randint(0, 25) for _ in range(length)]
+
+
+def otp_encrypt(plaintext, key):
+    plaintext = plaintext.replace(" ", "").lower()
+    ciphertext = ""
+
+    for i, ch in enumerate(plaintext):
+        p = c2n(ch)
+        k = key[i]
+        c = (p + k) % 26
+        ciphertext += n2c(c)
+    return ciphertext
+
+
+def otp_decrypt(ciphertext, key):
+    plaintext = ""
+    for i, ch in enumerate(ciphertext):
+        c = c2n(ch)
+        k = key[i]
+        p = (c - k) % 26
+        plaintext += n2c(p)
+    return plaintext
+
+
+# --------------------------------------------------------
+# INPUTS INSIDE THE CODE ITSELF
+# --------------------------------------------------------
+
+plaintext = "hellothisisotp"    # example plaintext
+key = generate_key(len(plaintext))
+
+print("Plaintext : ", plaintext)
+print("Key Stream: ", key)
+
+cipher = otp_encrypt(plaintext, key)
+print("Ciphertext:", cipher)
+
+recovered = otp_decrypt(cipher, key)
+print("Decrypted : ", recovered)
