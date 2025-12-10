@@ -1,0 +1,26 @@
+from sympy import mod_inverse
+
+# Original modulus n
+p, q = 61, 53
+n = p * q
+phi = (p-1)*(q-1)
+
+# Original keys
+e = 17
+d = mod_inverse(e, phi)
+
+# Bob leaks d
+print("Leaked private key d =", d)
+
+# Bob generates new e' but same n
+e_new = 5
+# Compute corresponding d'
+d_new = mod_inverse(e_new, phi)
+print("New public key e' =", e_new)
+print("New private key d' =", d_new)
+
+# Check if attacker can use leaked d to decrypt new messages
+m = 42
+c = pow(m, e_new, n)
+m_recovered = pow(c, d, n)  # Using leaked old d
+print("Recovered with leaked d:", m_recovered)
