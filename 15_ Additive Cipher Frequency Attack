@@ -1,0 +1,102 @@
+import string
+from collections import Counter
+
+# English letter frequency %
+ENGLISH_FREQ = {
+ 'a': 8.167, 'b': 1.492, 'c': 2.782, 'd': 4.253, 'e': 12.702, 'f': 2.228,
+ 'g': 2.015, 'h': 6.094, 'i': 6.966, 'j': 0.153, 'k': 0.772, 'l': 4.025,
+ 'm': 2.406, 'n': 6.749, 'o': 7.507, 'p': 1.929, 'q': 0.095, 'r': 5.987,
+ 's': 6.327, 't': 9.056, 'u': 2.758, 'v': 0.978, 'w': 2.360, 'x': 0.150,
+ 'y': 1.974, 'z': 0.074
+}
+
+# A small set of common English words for scoring
+COMMON_WORDS = {"the","be","to","of","and","a","in","that","have","i","it","for","not","on","with"}
+
+alphabet = "abcdefghijklmnopqrstuvwxyz"
+A2N = {c:i for i,c in enumerate(alphabet)}
+N2A = {i:c for c,i in A2N.items()}
+
+
+# ------------------------------------------------------------
+# Caesar (Additive) Decryption
+# ------------------------------------------------------------
+def caesar_decrypt(ciphertext, shift):
+    result = ""
+    for ch in ciphertext:
+        if ch.isalpha():
+            c = ch.lower()
+            num = A2N[c]
+            dec = (num - shift) % 26
+            result += N2A[dec]
+        else:
+            result += ch
+    return result
+
+
+# ------------------------------------------------------------
+# Chi-Squared English Score (lower = more English-like)
+# ------------------------------------------------------------
+def chi_squared_score(text):
+    text = "".join(ch for ch in text.lower() if ch.isalpha())
+    if len(text) == 0:
+        return float("inf")
+    
+    count = Counter(text)
+    N = len(text)
+    chi2 = 0.0
+    
+    for letter in alphabet:
+        observed = count[letter]
+        expected = ENGLISH_FREQ[letter] * N / 100
+        chi2 += (observed - expected)**2 / (expected + 1e-9)
+    
+    return chi2
+
+
+# ------------------------------------------------------------
+# Word Match Score (higher = better)
+# ------------------------------------------------------------
+def word_score(text):
+    words = text.split()
+    score = 0
+    for w in words:
+        if w in COMMON_WORDS:
+            score += 1
+    return score
+
+
+# ------------------------------------------------------------
+# Main Frequency Attack
+# ------------------------------------------------------------
+def additive_frequency_attack(ciphertext, top_n=10):
+    candidates = []
+    
+    for shift in range(26):
+        plaintext = caesar_decrypt(ciphertext, shift)
+        chi2 = chi_squared_score(plaintext)
+        wscore = word_score(plaintext)
+        
+        # Ranking formula: wants LOW chi2, HIGH word score
+        rank = chi2 - (wscore * 50) 
+        
+        candidates.append((rank, shift, plaintext, chi2, wscore))
+    
+    # Sort by best rank
+    candidates.sort(key=lambda x: x[0])
+    
+    return candidates[:top_n]
+
+
+# ------------------------------------------------------------
+# Example Usage (User Can Change top_n)
+# ------------------------------------------------------------
+if __name__ == "__main__":
+    ciphertext = "ZHOFRPH WR PB ZRUOG"  # example encrypted text
+    top_n = 10  # user may modify
+    
+    results = additive_frequency_attack(ciphertext, top_n)
+    
+    print(f"\nTop {top_n} candidate plaintexts:\n")
+    for rank, shift, pt, chi2, w in results:
+        print(f"Shift {shift:2d} | Chi²={chi2:8.2f} | WordScore={w} | {pt}")
