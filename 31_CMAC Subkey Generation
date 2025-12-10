@@ -1,0 +1,30 @@
+from Crypto.Cipher import AES
+
+def left_shift(bits):
+    shifted = bits[1:] + '0'
+    return shifted
+
+def generate_subkeys(block_size=128):
+    cipher = AES.new(b'\x00'*16, AES.MODE_ECB)
+    L = cipher.encrypt(b'\x00'*(block_size//8))
+    L_bits = ''.join(f'{b:08b}' for b in L)
+
+    # Rb constants
+    Rb = {64: '00011011', 128: '00000000000000000000000000000087'}
+    Rb_val = Rb[block_size]
+
+    # Subkey 1
+    K1 = left_shift(L_bits)
+    if L_bits[0] == '1':
+        K1 = ''.join(str(int(a)^int(b)) for a,b in zip(K1, Rb_val))
+
+    # Subkey 2
+    K2 = left_shift(K1)
+    if K1[0] == '1':
+        K2 = ''.join(str(int(a)^int(b)) for a,b in zip(K2, Rb_val))
+
+    return K1, K2
+
+k1, k2 = generate_subkeys(128)
+print("CMAC Subkey K1:", k1)
+print("CMAC Subkey K2:", k2)
