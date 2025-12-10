@@ -1,0 +1,30 @@
+import math
+
+n = 3599
+e = 31
+plaintext_block = 59   # Example: common factor with n
+
+g = math.gcd(plaintext_block, n)
+
+if g > 1:
+    print("Common factor found:", g)
+    p = g
+    q = n // g
+    print("p =", p, "q =", q)
+else:
+    print("No common factor")
+
+phi = (p-1)*(q-1)
+
+# Find d
+def egcd(a, b):
+    if b == 0: return a, 1, 0
+    g, x1, y1 = egcd(b, a % b)
+    return g, y1, x1 - (a//b)*y1
+
+def mod_inverse(a, m):
+    g, x, y = egcd(a, m)
+    return x % m
+
+d = mod_inverse(e, phi)
+print("Recovered RSA private key:", d)
