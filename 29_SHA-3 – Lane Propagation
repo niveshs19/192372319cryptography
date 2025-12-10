@@ -1,0 +1,18 @@
+# SHA-3: 5x5 lanes (simplified)
+capacity_lanes = [[0]*5 for _ in range(5)]
+rate_lanes = [[1]*5 for _ in range(5)]  # initial P0 has non-zero
+
+rounds = 0
+while True:
+    rounds += 1
+    # XOR rate into capacity
+    changed = False
+    for i in range(5):
+        for j in range(5):
+            if capacity_lanes[i][j] == 0:
+                capacity_lanes[i][j] ^= rate_lanes[i][j]
+                changed = True
+    if not changed:
+        break
+
+print("Rounds until all capacity lanes non-zero:", rounds)
