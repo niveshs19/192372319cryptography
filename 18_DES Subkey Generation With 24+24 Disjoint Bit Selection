@@ -1,0 +1,34 @@
+1. 24 bit subkey with 28 bit initial key.
+# Python program for generating DES-like subkeys
+# where first 24 bits come from subset A (28 bits)
+# and next 24 bits come from subset B (another 28 bits)
+
+def generate_subkeys(initial_key_56bit):
+    # Ensure key length = 56 bits
+    if len(initial_key_56bit) != 56:
+        raise ValueError("Key must be 56 bits")
+
+    # Split into two disjoint subsets of 28 bits each
+    subset_A = initial_key_56bit[:28]
+    subset_B = initial_key_56bit[28:]
+
+    subkeys = []
+    for round_num in range(16):
+        # Simple circular left shift
+        shift = (round_num % 28)
+        part1 = subset_A[shift:] + subset_A[:shift]
+        part2 = subset_B[shift:] + subset_B[:shift]
+
+        # Take first 24 bits from each shifted subset
+        subkey = part1[:24] + part2[:24]
+        subkeys.append(subkey)
+
+    return subkeys
+
+
+# Example usage
+initial_key = "01101010100101101010100101101010010110101001011010101001"  # 56 bits
+subkeys = generate_subkeys(initial_key)
+
+for i, k in enumerate(subkeys):
+    print(f"Round {i+1} Subkey: {k}")
