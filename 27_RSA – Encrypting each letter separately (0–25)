@@ -1,0 +1,19 @@
+n = 3233
+e = 17
+
+# Convert message to numbers (A=0, B=1,...)
+message = "HELLO"
+msg_nums = [ord(c) - ord('A') for c in message]
+
+# Encrypt each number separately
+cipher_nums = [pow(m, e, n) for m in msg_nums]
+print("Ciphertext numbers:", cipher_nums)
+
+# Brute-force attack
+recovered = []
+for c in cipher_nums:
+    for m in range(26):
+        if pow(m, e, n) == c:
+            recovered.append(m)
+            break
+print("Recovered plaintext numbers:", recovered)
