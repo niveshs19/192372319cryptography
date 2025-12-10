@@ -1,0 +1,31 @@
+import math
+
+# Given
+e = 31
+n = 3599
+
+# 1. Factor n by trial
+def factor(n):
+    for i in range(2, int(math.sqrt(n))+1):
+        if n % i == 0:
+            return i, n // i
+
+p, q = factor(n)
+phi = (p-1)*(q-1)
+
+# 2. Extended Euclidean Algorithm
+def egcd(a, b):
+    if b == 0: return a, 1, 0
+    g, x1, y1 = egcd(b, a % b)
+    return g, y1, x1 - (a//b)*y1
+
+def mod_inverse(a, m):
+    g, x, y = egcd(a, m)
+    return x % m
+
+d = mod_inverse(e, phi)
+
+print("p =", p)
+print("q =", q)
+print("phi(n) =", phi)
+print("Private key d =", d)
