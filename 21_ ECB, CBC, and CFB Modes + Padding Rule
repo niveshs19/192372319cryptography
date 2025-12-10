@@ -1,0 +1,64 @@
+from Crypto.Cipher import DES
+import base64
+
+# -------------------------------
+# Custom Padding: 1 bit + zeros
+# -------------------------------
+def bit_padding(data, block_size=8):
+    pad_len = block_size - (len(data) % block_size)
+    if pad_len == 0:
+        pad_len = block_size
+    return data + bytes([0x80] + [0x00] * (pad_len - 1))
+
+
+# -------------------------------
+# ECB Encryption/Decryption
+# -------------------------------
+def ecb_encrypt(key, plaintext):
+    cipher = DES.new(key, DES.MODE_ECB)
+    padded = bit_padding(plaintext)
+    return cipher.encrypt(padded)
+
+def ecb_decrypt(key, ciphertext):
+    cipher = DES.new(key, DES.MODE_ECB)
+    pt = cipher.decrypt(ciphertext)
+    return pt
+
+
+# -------------------------------
+# CBC Encryption/Decryption
+# -------------------------------
+def cbc_encrypt(key, iv, plaintext):
+    cipher = DES.new(key, DES.MODE_CBC, iv)
+    padded = bit_padding(plaintext)
+    return cipher.encrypt(padded)
+
+def cbc_decrypt(key, iv, ciphertext):
+    cipher = DES.new(key, DES.MODE_CBC, iv)
+    pt = cipher.decrypt(ciphertext)
+    return pt
+
+
+# -------------------------------
+# CFB Encryption/Decryption
+# -------------------------------
+def cfb_encrypt(key, iv, plaintext):
+    cipher = DES.new(key, DES.MODE_CFB, iv, segment_size=8)
+    return cipher.encrypt(plaintext)
+
+def cfb_decrypt(key, iv, ciphertext):
+    cipher = DES.new(key, DES.MODE_CFB, iv, segment_size=8)
+    return cipher.decrypt(ciphertext)
+
+
+# -------------------------------
+# Example Run
+# -------------------------------
+key = b"12345678"   # DES = 8 bytes
+iv  = b"ABCDEFGH"
+
+plaintext = b"HELLO WORLD"
+
+print("\nECB:", base64.b64encode(ecb_encrypt(key, plaintext)))
+print("CBC:", base64.b64encode(cbc_encrypt(key, iv, plaintext)))
+print("CFB:", base64.b64encode(cfb_encrypt(key, iv, plaintext)))
