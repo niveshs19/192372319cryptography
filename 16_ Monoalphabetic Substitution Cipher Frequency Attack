@@ -1,0 +1,200 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <time.h>
+
+#define ALPHABET 26
+#define MAX_TEXT 5000
+#define MAX_RESULTS 50
+#define ITERATIONS 2000
+#define RESTARTS 40
+
+// A small common English words list
+char *common_words[] = {
+    "the","be","to","of","and","a","in","that","have","i","it","for",
+    "not","on","with","he","as","you","do","at","this","but","his",
+    "by","from","they","we","say","her","she","or","an","will","my",
+    "one","all","would","there","their"
+};
+int common_words_count = 38;
+
+// Digram scores (approx English)
+typedef struct { char dig[3]; double score; } digram;
+digram digrams[] = {
+    {"th",2.71},{"he",2.33},{"in",2.03},{"er",1.78},{"an",1.61},
+    {"re",1.41},{"on",1.13},{"at",0.90},{"en",1.01},{"nd",0.90},
+    {"ti",0.88},{"es",1.12},{"or",0.88},{"te",0.93},{"of",0.70},
+};
+int digram_count = 15;
+
+typedef struct {
+    double score;
+    char plaintext[MAX_TEXT];
+    char map[26];
+} candidate;
+
+// ------------------------------------------------------------
+// Utility
+// ------------------------------------------------------------
+
+void strip_text(char *dst, const char *src) {
+    while(*src) {
+        if(isalpha(*src)) *dst++ = tolower(*src);
+        src++;
+    }
+    *dst = '\0';
+}
+
+void random_mapping(char *map) {
+    int used[26] = {0};
+    for (int i = 0; i < 26; i++) {
+        int r;
+        do { r = rand() % 26; } while (used[r]);
+        used[r] = 1;
+        map[i] = 'a' + r;
+    }
+}
+
+void apply_mapping(char *out, const char *text, const char *map) {
+    int i = 0;
+    while(text[i]) {
+        if(isalpha(text[i])) {
+            int idx = tolower(text[i]) - 'a';
+            out[i] = map[idx];
+        } else out[i] = text[i];
+        i++;
+    }
+    out[i] = '\0';
+}
+
+double digram_score(const char *text) {
+    double s = 0;
+    int n = strlen(text);
+    for(int i = 0; i < n-1; i++) {
+        char d[3] = {text[i], text[i+1], '\0'};
+        for(int j = 0; j < digram_count; j++) {
+            if(d[0] == digrams[j].dig[0] && d[1] == digrams[j].dig[1])
+                s += digrams[j].score;
+        }
+    }
+    return s;
+}
+
+int word_score(const char *text) {
+    int score = 0;
+    char temp[1000];
+    strcpy(temp, text);
+
+    char *tok = strtok(temp, " ");
+    while(tok) {
+        for(int i = 0; i < common_words_count; i++) {
+            if(strcmp(tok, common_words[i]) == 0)
+                score++;
+        }
+        tok = strtok(NULL, " ");
+    }
+    return score;
+}
+
+double total_score(const char *text) {
+    return digram_score(text) + word_score(text) * 20;
+}
+
+// Swap mapping
+void swap(char *map, int a, int b) {
+    char t = map[a];
+    map[a] = map[b];
+    map[b] = t;
+}
+
+// ------------------------------------------------------------
+// Hill-climbing substitution attack
+// ------------------------------------------------------------
+void substitution_attack(const char *cipher, candidate *results, int top_n) {
+    char best_map[26], cur_map[26];
+    char best_plain[MAX_TEXT], cur_plain[MAX_TEXT];
+    double best_score = -1e9;
+
+    int res_count = 0;
+
+    for(int r = 0; r < RESTARTS; r++) {
+        random_mapping(cur_map);
+        apply_mapping(cur_plain, cipher, cur_map);
+        double score = total_score(cur_plain);
+
+        for(int iter = 0; iter < ITERATIONS; iter++) {
+            int a = rand() % 26;
+            int b = rand() % 26;
+            swap(cur_map, a, b);
+
+            char test_plain[MAX_TEXT];
+            apply_mapping(test_plain, cipher, cur_map);
+            double new_score = total_score(test_plain);
+
+            if(new_score > score) {
+                score = new_score;
+                strcpy(cur_plain, test_plain);
+            } else {
+                // revert
+                swap(cur_map, a, b);
+            }
+        }
+
+        if(score > best_score) {
+            best_score = score;
+            memcpy(best_map, cur_map, 26);
+            strcpy(best_plain, cur_plain);
+
+            // Save candidate
+            if(res_count < top_n) {
+                results[res_count].score = score;
+                strcpy(results[res_count].plaintext, best_plain);
+                memcpy(results[res_count].map, best_map, 26);
+                res_count++;
+            }
+        }
+    }
+
+    // Sort results by score
+    for(int i = 0; i < top_n; i++) {
+        for(int j = i+1; j < top_n; j++) {
+            if(results[j].score > results[i].score) {
+                candidate tmp = results[i];
+                results[i] = results[j];
+                results[j] = tmp;
+            }
+        }
+    }
+}
+
+// ------------------------------------------------------------
+// Main
+// ------------------------------------------------------------
+int main() {
+    srand(time(NULL));
+
+    char ciphertext[MAX_TEXT];
+    printf("Enter ciphertext (monoalphabetic substitution):\n");
+    fgets(ciphertext, MAX_TEXT, stdin);
+
+    int top_n;
+    printf("Enter number of probable plaintexts to output (e.g., 10): ");
+    scanf("%d", &top_n);
+
+    candidate results[MAX_RESULTS];
+
+    substitution_attack(ciphertext, results, top_n);
+
+    printf("\n---- Top %d probable plaintexts ----\n\n", top_n);
+    for(int i = 0; i < top_n; i++) {
+        printf("[%2d] Score: %.2f\n", i+1, results[i].score);
+        printf("Plaintext: %s\n", results[i].plaintext);
+        printf("Key map: ");
+        for(int j = 0; j < 26; j++)
+            printf("%c->%c ", 'a'+j, results[i].map[j]);
+        printf("\n\n");
+    }
+
+    return 0;
+}
