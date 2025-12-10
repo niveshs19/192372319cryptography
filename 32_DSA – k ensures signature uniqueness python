@@ -1,0 +1,24 @@
+import random
+from hashlib import sha1
+
+# Simplified demonstration
+p = 23
+q = 11
+g = 2
+x = 6   # private
+y = pow(g,x,p)
+
+def sign(msg):
+    k = random.randint(1,q-1)
+    r = pow(g,k,p) % q
+    h = int.from_bytes(sha1(msg.encode()).digest(),'big') % q
+    s = (pow(k,-1,q)*(h + x*r)) % q
+    return r,s
+
+m1 = "Hello"
+m2 = "Hello"
+
+sig1 = sign(m1)
+sig2 = sign(m2)
+print("Signature 1:", sig1)
+print("Signature 2:", sig2)
