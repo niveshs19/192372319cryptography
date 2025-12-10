@@ -1,0 +1,15 @@
+# Public parameters
+a = 5
+q = 23
+
+# Secret numbers
+x = 6  # Alice
+y = 15 # Bob
+
+# Standard DH
+A = pow(a, x, q)
+B = pow(a, y, q)
+shared_key = pow(B, x, q)
+print("Shared key:", shared_key)
+
+# Eve cannot easily find x or y
